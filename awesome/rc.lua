@@ -6,12 +6,16 @@ pcall(require, "luarocks.loader")
 local gears = require("gears")
 local awful = require("awful")
 require("awful.autofocus")
+--multi display
+local xrandr = require("xrandr")
 -- Widget and layout library
 local wibox = require("wibox")
+local cpu_widget = require("awesome-wm-widgets.cpu-widget.cpu-widget")
 local batteryarc_widget = require("awesome-wm-widgets.batteryarc-widget.batteryarc")
 local logout_menu_widget = require("awesome-wm-widgets.logout-menu-widget.logout-menu")
 local brightness_widget = require("awesome-wm-widgets.brightness-widget.brightness")
 local volume_widget = require('awesome-wm-widgets.volume-widget.volume')
+local net_speed_widget = require("awesome-wm-widgets.net-speed-widget.net-speed")
 -- Theme handling library
 local beautiful = require("beautiful")
 -- Notification library
@@ -240,6 +244,11 @@ awful.screen.connect_for_each_screen(function(s)
             --mykeyboardlayout,
             wibox.widget.systray(),
             mytextclock,
+            cpu_widget({
+                color =  "#00fff7",
+                enable_kill_button = true,
+            }),
+            net_speed_widget(),
             batteryarc_widget({
             	main_color = "#ffffff",
             	show_current_level = true,
@@ -269,29 +278,42 @@ root.buttons(gears.table.join(
 -- {{{ Key bindings
 	--sound
 globalkeys = gears.table.join(
+    awful.key({modkey}, "ü", function() xrandr.xrandr() end),
     awful.key({}, "XF86AudioRaiseVolume", function () awful.util.spawn("amixer -D pulse sset Master 5%+", false) end),
     awful.key({}, "XF86AudioLowerVolume", function () awful.util.spawn("amixer -D pulse sset Master 5%-", false) end),
     awful.key({}, "XF86AudioMute", function () awful.util.spawn("amixer -D pulse sset Master toggle", false) end),
     --backlight
-    awful.key({ }, "XF86MonBrightnessDown", function () awful.util.spawn("xbacklight -dec 5", false) end),
-    awful.key({ }, "XF86MonBrightnessUp", function () awful.util.spawn("xbacklight -inc 5", false) end),
+    awful.key({ }, "XF86MonBrightnessDown", function () awful.util.spawn("light -U 5", false) end),
+    awful.key({ }, "XF86MonBrightnessUp", function () awful.util.spawn("light -A 5", false) end),
 
     awful.key({ modkey,           }, "s",      hotkeys_popup.show_help,
               {description="show help", group="awesome"}),
-    awful.key({ modkey,           }, "Left",   awful.tag.viewprev,
-              {description = "view previous", group = "tag"}),
-    awful.key({ modkey,           }, "Right",  awful.tag.viewnext,
-              {description = "view next", group = "tag"}),
+    --awful.key({ modkey,           }, "Left",   awful.tag.viewprev,
+    --          {description = "view previous", group = "tag"}),
+    --awful.key({ modkey,           }, "Right",  awful.tag.viewnext,
+    --          {description = "view next", group = "tag"}),
     awful.key({ modkey,           }, "Escape", awful.tag.history.restore,
               {description = "go back", group = "tag"}),
 
-    awful.key({ modkey,           }, "j",
+    awful.key({ modkey,           }, "Left",--"j"
         function ()
             awful.client.focus.byidx( 1)
         end,
         {description = "focus next by index", group = "client"}
     ),
     awful.key({ modkey,           }, "k",
+        function ()
+            awful.client.focus.byidx( 1)
+        end,
+        {description = "focus next by index", group = "client"}
+    ),
+    awful.key({ modkey,           }, "Right",--"k"
+        function ()
+            awful.client.focus.byidx(-1)
+        end,
+        {description = "focus previous by index", group = "client"}
+    ),
+    awful.key({ modkey,           }, "j",--"k"
         function ()
             awful.client.focus.byidx(-1)
         end,
@@ -611,7 +633,13 @@ client.connect_signal("focus", function(c) c.border_color = beautiful.border_foc
 client.connect_signal("unfocus", function(c) c.border_color = beautiful.border_normal end)
 -- }}}
 
+beautiful.useless_gap = 3
+beautiful.border_normal = "#059b96"
+beautiful.border_focus = "#00fff7"
+
+
 -- autostart apps
 awful.spawn.with_shell("compton")
-awful.spawn.with_shell("nitrogen --restore")
-awful.spawn.with_shell("xinput --set-prop 11 318 1")
+awful.spawn.with_shell("nitrogen --set-scaled --random --restore /home/arthurhagen/Pictures/backgrounds/SCP")
+--awful.spawn.with_shell("nitrogen --restore")
+--awful.spawn.with_shell("xinput --set-prop 11 318 1")
