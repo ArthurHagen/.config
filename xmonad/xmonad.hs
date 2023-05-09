@@ -1,19 +1,23 @@
---IMPORTS
+-- xmonad.hs
+-- xmonad example config file.
+--
+-- A template showing all available configuration hooks,
+-- and how to override the defaults in your own xmonad.hs conf file.
+--
+-- Normally, you'd only override those defaults you care about.
+--
 
 import XMonad
 import Data.Monoid
 import System.Exit
+import Graphics.X11.ExtraTypes.XF86
+import XMonad.Hooks.DynamicLog
 
 
 import qualified XMonad.StackSet as W
 import qualified Data.Map        as M
 
 import XMonad.Util.SpawnOnce
-import XMonad.Util.Run
-import XMonad.Hooks.ManageDocks
-import XMonad.Hooks.DynamicLog
-import XMonad.Util.EZConfig(additionalKeys)
-import System.IO
 
 -- The preferred terminal program, which is used in a binding below and by
 -- certain contrib modules.
@@ -62,6 +66,15 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
 
     -- launch a terminal
     [ ((modm .|. shiftMask, xK_Return), spawn $ XMonad.terminal conf)
+    
+    -- volume keys
+    , ((0, xF86XK_AudioMute), spawn "pamixer -t")
+    , ((0, xF86XK_AudioLowerVolume), spawn "pamixer -d 5")
+    , ((0, xF86XK_AudioRaiseVolume), spawn "pamixer -i 5")
+
+    -- display brigthness
+    , ((0, xF86XK_MonBrightnessUp), spawn "brightnessctl -d intel_backlight s 5%+")
+    , ((0, xF86XK_MonBrightnessDown), spawn "brightnessctl -d intel_backlight s 5%-")
 
     -- launch rofi
     , ((modm,               xK_p     ), spawn "rofi -show drun")
@@ -123,10 +136,7 @@ myKeys conf@(XConfig {XMonad.modMask = modm}) = M.fromList $
     --
     -- , ((modm              , xK_b     ), sendMessage ToggleStruts)
 
-    -- Quit xmonad
-    -- , ((modm .|. shiftMask, xK_q     ), io (exitWith ExitSuccess))
-    --
-
+    -- powermenu
     , ((modm              , xK_q     ), spawn "rofi -show power-menu -modi power-menu:/home/arthurhagen/.config/qtile/rofi/rofi-power-menu/rofi-power-menu")
 
     -- Restart xmonad
@@ -185,7 +195,7 @@ myMouseBindings (XConfig {XMonad.modMask = modm}) = M.fromList $
 -- The available layouts.  Note that each layout is separated by |||,
 -- which denotes layout choice.
 --
-myLayout = avoidStruts (Full ||| tiled)
+myLayout = Full ||| tiled
   where
      -- default tiling algorithm partitions the screen into two panes
      tiled   = Tall nmaster delta ratio
@@ -217,7 +227,6 @@ myLayout = avoidStruts (Full ||| tiled)
 myManageHook = composeAll
     [ className =? "MPlayer"        --> doFloat
     , className =? "Gimp"           --> doFloat
-    , className =? "Tor Browser"    --> doFloat
     , resource  =? "desktop_window" --> doIgnore
     , resource  =? "kdesktop"       --> doIgnore ]
 
@@ -248,21 +257,28 @@ myLogHook = return ()
 -- per-workspace layout choices.
 --
 -- By default, do nothing.
-myStartupHook = do
+myStartupHook = do 
       spawnOnce "/home/arthurhagen/.config/nitrogen/randwallpaper /home/arthurhagen/.config/nitrogen/bg-saved.cfg ~/Pictures/wallpaper/active/ &"
       spawnOnce "nitrogen --restore &"
       spawnOnce "picom &"
       spawnOnce "conky &"
 
 ------------------------------------------------------------------------
+-- Command to launch the bar.
+myBar = "xmobar"
+
+-- Custom PP, configure it as you like. It determines what is being written to the bar.
+myPP = xmobarPP { ppCurrent = xmobarColor "#48f3ff" "" . wrap "<" ">" }
+
+-- Key binding to toggle the gap for the bar.
+toggleStrutsKey XConfig {XMonad.modMask = modMask} = (modMask, xK_b)
+
+------------------------------------------------------------------------
 -- Now run xmonad with all the defaults we set up.
 
 -- Run xmonad with the settings you specify. No need to modify this.
 --
-main = do
-      xmproc <- spawnPipe "xmobar -x 0 /home/arthurhagen/.config/xmobar/xmobarrc_main"
-      xmproc <- spawnPipe "xmobar -x 1 /home/arthurhagen/.config/xmobar/xmobarrc_secondary"
-      xmonad $ docks defaults
+main = xmonad =<< statusBar myBar myPP toggleStrutsKey defaults
 
 -- A structure containing your configuration settings, overriding
 -- fields in the default config. Any you don't override, will
